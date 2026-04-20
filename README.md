@@ -84,7 +84,9 @@ http://127.0.0.1:5000/
 
 📸 Screenshots
 
-<img width="1366" height="768" alt="Screenshot (14)" src="https://github.com/user-attachments/assets/f0a5c151-0062-4f15-ba08-71db6f983075" />
+
+![Uploading Smart Task Manager.png…]()
+
 
 ---
 
