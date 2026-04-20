@@ -1,166 +1,157 @@
-import json
+from flask import Flask, render_template, request, redirect, url_for, send_file
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from datetime import datetime
+import csv
+import io
 
-# Global task list
-tasks = []
+app = Flask(__name__)
+app.config['SECRET_KEY'] = 'secretkey'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tasks.db'
 
+db = SQLAlchemy(app)
+login_manager = LoginManager()
+login_manager.init_app(app)
 
-# -------------------- FILE HANDLING --------------------
+# ---------------- MODELS ---------------- #
 
-def load_tasks():
-    global tasks
-    try:
-        with open("tasks.json", "r") as file:
-            tasks = json.load(file)
-    except:
-        tasks = []
+class User(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(100), unique=True)
+    password = db.Column(db.String(100))
 
+class Task(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200))
+    priority = db.Column(db.String(20), default="Medium")
+    due_date = db.Column(db.Date)
+    is_completed = db.Column(db.Boolean, default=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
-def save_tasks():
-    with open("tasks.json", "w") as file:
-        json.dump(tasks, file, indent=4)
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+login_manager.login_view = 'login'
 
+# ---------------- AUTH ---------------- #
 
-# -------------------- CORE FEATURES --------------------
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        user = User(username=request.form['username'],
+                    password=request.form['password'])
+        db.session.add(user)
+        db.session.commit()
+        return redirect('/login')
+    return render_template('register.html')
 
-def add_task():
-    name = input("Enter task: ")
-    priority = input("Enter priority (High/Medium/Low): ")
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        user = User.query.filter_by(username=request.form['username'],
+                                    password=request.form['password']).first()
+        if user:
+            login_user(user)
+            return redirect('/')
+    return render_template('login.html')
 
-    task = {
-        "name": name,
-        "priority": priority,
-        "done": False
-    }
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect('/login')
 
-    tasks.append(task)
+# ---------------- DASHBOARD ---------------- #
 
-    save_tasks()   # 👈 VERY IMPORTANT LINE
+@app.route('/')
+@login_required
+def index():
+    search = request.args.get('search')
+    filter_type = request.args.get('filter')
 
-    print("✅ Task added!")
-    
+    tasks = Task.query.filter_by(user_id=current_user.id)
 
+    if search:
+        tasks = tasks.filter(Task.title.contains(search))
 
-def view_tasks():
-    if not tasks:
-        print("❌ No tasks available")
-        return
+    if filter_type == "completed":
+        tasks = tasks.filter_by(is_completed=True)
+    elif filter_type == "pending":
+        tasks = tasks.filter_by(is_completed=False)
+    elif filter_type == "high":
+        tasks = tasks.filter_by(priority="High")
 
-    print("\n📋 Your Tasks:")
-    for i, task in enumerate(tasks):
-        status = "✅ Done" if task["done"] else "⏳ Pending"
-        print(f"{i+1}. {task['name']} | {task['priority']} | {status}")
+    tasks = tasks.all()
 
+    total = Task.query.filter_by(user_id=current_user.id).count()
+    completed = Task.query.filter_by(user_id=current_user.id, is_completed=True).count()
+    pending = total - completed
 
-def delete_task():
-    view_tasks()
-    try:
-        task_no = int(input("Enter task number to delete: "))
-        if 0 < task_no <= len(tasks):
-            removed = tasks.pop(task_no - 1)
-            save_tasks()
-            print(f"🗑️ Deleted: {removed['name']}")
-        else:
-            print("❌ Invalid number")
-    except:
-        print("❌ Please enter a valid number")
+    return render_template("index.html", tasks=tasks,
+                           total=total, completed=completed, pending=pending)
 
+# ---------------- ADD TASK ---------------- #
 
-def mark_done():
-    view_tasks()
-    try:
-        task_no = int(input("Enter task number to mark as done: "))
-        if 0 < task_no <= len(tasks):
-            tasks[task_no - 1]["done"] = True
-            save_tasks()
-            print("✅ Task marked as done!")
-        else:
-            print("❌ Invalid number")
-    except:
-        print("❌ Please enter a valid number")
+@app.route('/add', methods=['POST'])
+@login_required
+def add():
+    title = request.form['title']
+    priority = request.form['priority']
+    due_date = datetime.strptime(request.form['due_date'], "%Y-%m-%d")
 
+    task = Task(title=title,
+                priority=priority,
+                due_date=due_date,
+                user_id=current_user.id)
 
-def search_task():
-    keyword = input("Enter keyword to search: ").lower()
-    found = False
+    db.session.add(task)
+    db.session.commit()
+    return redirect('/')
 
-    for i, task in enumerate(tasks):
-        if keyword in task["name"].lower():
-            status = "Done" if task["done"] else "Pending"
-            print(f"{i+1}. {task['name']} | {task['priority']} | {status}")
-            found = True
+# ---------------- COMPLETE TASK ---------------- #
 
-    if not found:
-        print("❌ No matching tasks found")
+@app.route('/complete/<int:id>')
+@login_required
+def complete(id):
+    task = Task.query.get(id)
+    task.is_completed = not task.is_completed
+    db.session.commit()
+    return redirect('/')
 
+# ---------------- DELETE TASK ---------------- #
 
-def sort_tasks():
-    if not tasks:
-        print("❌ No tasks to sort")
-        return
+@app.route('/delete/<int:id>')
+@login_required
+def delete(id):
+    task = Task.query.get(id)
+    db.session.delete(task)
+    db.session.commit()
+    return redirect('/')
 
-    priority_order = {"High": 1, "Medium": 2, "Low": 3}
-    tasks.sort(key=lambda x: priority_order.get(x["priority"], 4))
+# ---------------- EXPORT CSV ---------------- #
 
-    print("🔄 Tasks sorted by priority!")
-    save_tasks()
+@app.route('/export')
+@login_required
+def export():
+    tasks = Task.query.filter_by(user_id=current_user.id).all()
 
-def edit_task():
-    view_tasks()
-    try:
-        task_no = int(input("Enter task number to edit: "))
-        if 0 < task_no <= len(tasks):
-            new_name = input("Enter new task name: ")
-            new_priority = input("Enter new priority (High/Medium/Low): ")
+    output = io.StringIO()
+    writer = csv.writer(output)
 
-            tasks[task_no - 1]["name"] = new_name
-            tasks[task_no - 1]["priority"] = new_priority
+    writer.writerow(['Title', 'Priority', 'Due Date', 'Completed'])
 
-            save_tasks()
-            print("✏️ Task updated!")
-        else:
-            print("❌ Invalid number")
-    except:
-        print("❌ Please enter a valid number")
+    for t in tasks:
+        writer.writerow([t.title, t.priority, t.due_date, t.is_completed])
 
-# -------------------- MAIN PROGRAM --------------------
+    output.seek(0)
 
-def main():
-    load_tasks()
+    return send_file(io.BytesIO(output.getvalue().encode()),
+                     download_name="tasks.csv",
+                     as_attachment=True)
 
-    while True:
-        print("\n====== SMART TASK MANAGER ======")
-        print("1. Add Task")
-        print("2. View Tasks")
-        print("3. Delete Task")
-        print("4. Mark Task as Done")
-        print("5. Search Task")
-        print("6. Sort by Priority")
-        print("7. Edit Task")
-        print("8. Exit")
+# ---------------- RUN ---------------- #
 
-        choice = input("Enter your choice: ")
-
-        if choice == "1":
-            add_task()
-        elif choice == "2":
-            view_tasks()
-        elif choice == "3":
-            delete_task()
-        elif choice == "4":
-            mark_done()
-        elif choice == "5":
-            search_task()
-        elif choice == "6":
-            sort_tasks()
-        elif choice == "7":
-            edit_task()
-        elif choice == "8":
-            print("👋 Exiting... Goodbye!")
-            break
-        else:
-            print("❌ Invalid choice")
-
-
-# Run program
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
+    app.run(debug=True)

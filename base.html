@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Task Manager</title>
+    
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+body {
+    font-family: 'Segoe UI';
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    margin: 0;
+    color: white;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 220px;
+    height: 100vh;
+    background: #020617;
+    position: fixed;
+    padding: 20px;
+}
+
+.sidebar h2 {
+    color: white;
+}
+
+.sidebar a {
+    display: block;
+    color: #94a3b8;
+    margin: 15px 0;
+    text-decoration: none;
+    transition: 0.3s;
+}
+
+.sidebar a:hover {
+    color: #38bdf8;
+    transform: translateX(5px);
+}
+
+/* Main Content */
+.main {
+    margin-left: 240px;
+    padding: 30px;
+}
+
+/* Cards */
+.card {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(10px);
+    padding: 20px;
+    border-radius: 15px;
+    margin: 10px;
+    display: inline-block;
+    width: 200px;
+    text-align: center;
+    transition: 0.3s;
+}
+.toast-box {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #22c55e;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 10px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: 0.3s;
+}
+
+.toast-show {
+    opacity: 1;
+    transform: translateY(0);
+}
+.card:hover {
+    transform: translateY(-5px);
+}
+
+/* Form */
+input, select {
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    margin: 5px;
+    outline: none;
+}
+
+/* Buttons */
+button {
+    padding: 12px 20px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(90deg, #3b82f6, #6366f1);
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(99,102,241,0.5);
+}
+
+/* Task box */
+.task {
+    background: rgba(255,255,255,0.08);
+    padding: 15px;
+    margin-top: 10px;
+    border-radius: 12px;
+    transition: 0.3s;
+}
+
+.task:hover {
+    transform: scale(1.02);
+}
+
+/* Priority colors */
+.high { border-left: 5px solid #ef4444; }
+.medium { border-left: 5px solid #f59e0b; }
+.low { border-left: 5px solid #10b981; }
+
+/* Done style */
+.done {
+    text-decoration: line-through;
+    color: #9ca3af;
+
+}
+.main {
+    margin-left: 240px;
+    padding: 0px 30px;   /* 👈 reduce top padding */
+}
+.task-card {
+    animation: fadeIn 0.3s ease;
+}
+.task-card {
+    background: rgba(300,255,255,0.08);
+    color: white;              
+    border-radius: 20px;
+}
+.task-card h5 {
+    color: white;
+}
+.task-card small {
+    color: #cbd5f5 !important;
+}
+.task-card {
+    animation: fadeInUp 0.4s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.progress-container {
+    width: 100%;
+    height: 12px;
+    background: #1e293b;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+.stat-card {
+    position: relative;
+}
+
+.stat-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 15px;
+    box-shadow: 0 0 25px rgba(255,255,255,0.05);
+    opacity: 0;
+    transition: 0.3s;
+}
+
+.stat-card:hover::after {
+    opacity: 1;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #22c55e, #4ade80);
+    transition: width 0.5s ease;
+
+}
+.stat-card {
+    padding: 20px;
+    border-radius: 15px;
+    color: white;
+    text-align: center;
+    transition: 0.3s;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.stat-card:hover {
+    transform: translateY(-5px) scale(1.02);
+}
+
+/* Gradient backgrounds */
+.bg-gradient1 {
+    background: linear-gradient(135deg, #6366F1, #3B82F6);
+}
+
+.bg-gradient2 {
+    background: linear-gradient(135deg, #00F5A0, #00D9F5);
+}
+
+.bg-gradient3 {
+    background: linear-gradient(135deg, #FF6A00, #FF3D3D);
+}
+
+/* Bigger numbers */
+.stat-card h2 {
+    font-size: 36px;
+    margin-top: 10px;
+}
+.badge-high {
+    background: #ef4444;
+}
+.badge-medium {
+    background: #f59e0b;
+}
+.badge-low {
+    background: #10b981;
+}
+.btn {
+    border-radius: 10px;
+    transition: 0.3s;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+}
+.main {
+    animation: fadeIn 0.5s ease;
+}
+
+</style>
+
+    </style>
+    <script>
+function showToast(msg) {
+    let toast = document.getElementById("toast");
+    toast.innerText = msg;
+    toast.classList.add("toast-show");
+
+    setTimeout(() => {
+        toast.classList.remove("toast-show");
+    }, 2000);
+}
+</script>
+</head>
+
+<body class="dark">
+    
+
+<!-- SIDEBAR -->
+ <button onclick="toggleTheme()" class="btn btn-sm btn-outline-light mt-3">
+    🌙 / ☀️ Toggle Theme
+</button>
+<div class="sidebar">
+    <h3>📋 Task Manager</h3>
+
+    <a href="/">🏠 Dashboard</a>
+    <a href="/?filter=completed">✔ Completed</a>
+    <a href="/?filter=pending">⏳ Pending</a>
+    <a href="/?filter=high">🔥 High Priority</a>
+    <a href="/export">📁 Export CSV</a>
+    <a href="/logout">🚪 Logout</a>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+    {% block content %}{% endblock %}
+</div>
+<script>
+function toggleTheme() {
+    if (document.body.classList.contains("dark")) {
+        document.body.classList.remove("dark");
+        document.body.classList.add("light");
+        localStorage.setItem("theme", "light");
+    } else {
+        document.body.classList.remove("light");
+        document.body.classList.add("dark");
+        localStorage.setItem("theme", "dark");
+    }
+}
+
+// Load saved theme
+window.onload = function () {
+    let theme = localStorage.getItem("theme");
+
+    if (theme === "light") {
+        document.body.classList.add("light");
+    } else {
+        document.body.classList.add("dark");
+    }
+}
+</script>
+<div id="toast" class="toast-box">Task added successfully 🚀</div>
+</body>
+</html>

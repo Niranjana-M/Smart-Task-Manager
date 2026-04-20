@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block content %}
+
+
+
+<!-- DASHBOARD CARDS -->
+ <div class="hero mb-4 p-4">
+
+    <h2 style="letter-spacing:1px;">📋 Smart Task Dashboard</h2>
+    <p>Manage your tasks efficiently and stay productive 🚀</p>
+
+</div>
+<div class="row mb-4">
+
+    <div class="col-md-4">
+        <div class="stat-card bg-gradient1">
+            <h4>📌 Total Tasks</h4>
+            <h2>{{ total }}</h2>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="stat-card bg-gradient2">
+            <h4>✔ Completed</h4>
+            <h2>{{ completed }}</h2>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="stat-card bg-gradient3">
+            <h4>⏳ Pending</h4>
+            <h2>{{ pending }}</h2>
+        </div>
+    </div>
+
+</div>
+
+<!-- ADD TASK -->
+<div class="form-card mb-4 p-4">
+    <h5>➕ Add New Task</h5>
+
+    <form method="POST" action="/add" class="row g-2">
+
+        <div class="col-md-4">
+            <input class="form-control" name="title" placeholder="Task name">
+        </div>
+
+        <div class="col-md-2">
+            <select class="form-control" name="priority">
+                <option>High</option>
+                <option>Medium</option>
+                <option>Low</option>
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <input type="date" class="form-control" name="due_date">
+        </div>
+
+        <div class="col-md-3">
+            <button class="btn btn-primary w-100">Add Task</button>
+        </div>
+
+    </form>
+</div>
+
+<!-- FILTER + SEARCH -->
+<div class="d-flex justify-content-between mb-3">
+
+    <form method="GET" class="d-flex">
+        <input class="form-control me-2" name="search" placeholder="Search task">
+        <button class="btn btn-dark">Search</button>
+    </form>
+
+    <div>
+        <a class="btn btn-outline-primary btn-sm" href="/">All</a>
+        <a class="btn btn-outline-success btn-sm" href="/?filter=completed">Completed</a>
+        <a class="btn btn-outline-warning btn-sm" href="/?filter=pending">Pending</a>
+        <a class="btn btn-outline-danger btn-sm" href="/?filter=high">High</a>
+    </div>
+
+</div>
+
+
+<!-- TASK LIST -->
+
+{% if tasks|length == 0 %}
+<p style="text-align:center; color:#9ca3af; margin-top:20px;">
+    🚀 No tasks yet — start by adding one!
+</p>
+{% endif %}
+
+{% for t in tasks %}
+
+<div class="card task-card p-3 mb-3 w-100"
+     draggable="true"
+     ondragstart="drag(event)"
+     id="task-{{ t.id }}">
+
+    <div class="d-flex justify-content-between align-items-center">
+
+        <div>
+            <h5 class="mb-1">
+                {% if t.is_completed %}
+                    <del>{{ t.title }}</del>
+                {% else %}
+                    {{ t.title }}
+                {% endif %}
+            </h5>
+
+            <small class="text-muted">
+                Due: {{ t.due_date }}
+            </small>
+        </div>
+
+        <div>
+
+            {% if t.priority == "High" %}
+                <span class="badge badge-high">High</span>
+            {% elif t.priority == "Medium" %}
+                <span class="badge badge-medium">Medium</span>
+            {% else %}
+                <span class="badge badge-low">Low</span>
+            {% endif %}
+
+        </div>
+
+        <div>
+            <a class="btn btn-success btn-sm" href="/complete/{{ t.id }}">
+                ✔
+            </a>
+
+            <a class="btn btn-danger btn-sm" href="/delete/{{ t.id }}">
+                🗑
+            </a>
+        </div>
+
+    </div>
+
+</div>
+
+{% endfor %}
+
+{% endblock %}
