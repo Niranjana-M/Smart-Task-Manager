@@ -1,4 +1,4 @@
-# 📋 Smart Task Manager
+<img width="1366" height="661" alt="Smart Task Manager" src="https://github.com/user-attachments/assets/e676bc0d-7b79-4db0-b49a-d5b6e09616f0" /># 📋 Smart Task Manager
 
 A modern and interactive **Task Management Web Application** built using Flask.
 This app helps users manage tasks efficiently with a clean UI, dashboard analytics, and productivity features.
@@ -85,7 +85,8 @@ http://127.0.0.1:5000/
 📸 Screenshots
 
 
-![Uploading Smart Task Manager.png…]()
+<img width="1366" height="661" alt="Smart Task Manager" src="https://github.com/user-attachments/assets/89805531-58d2-4a89-97d8-07f1d5bd00d9" />
+
 
 
 ---
